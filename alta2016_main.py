@@ -8,3 +8,5 @@ data_test = pd.read_csv('data/alta16_kbcoref_test_pairs.csv', sep=',', index_col
 
 print data_train.head()
 print data_test.head()
+
+# Here comes the solution

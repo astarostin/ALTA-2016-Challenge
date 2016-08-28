@@ -22,21 +22,6 @@ def get_url_tokens(url):
     tokens = filter(None, re.split('\W+', path))
     return tokens
 
-def get_webpage_text(url):
-    html = urlopen(url).read()
-    soup = bs(html, 'html.parser')
-    texts = soup.findAll(text=True)
-
-    def visible(element):
-        if element.parent.name in ['style', 'script', '[document]', 'head', 'title']:
-            return False
-        elif re.match('<!--.*-->', str(element)):
-            return False
-        return True
-
-    visible_texts = filter(visible, texts)
-    return visible_texts
-
 def stem_tokens(tokens, stemmer):
     stemmed = []
     for item in tokens:

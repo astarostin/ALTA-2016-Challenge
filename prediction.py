@@ -2,7 +2,7 @@ import pandas as pd
 import datetime
 
 
-def predict(predictor, data_train, y, data_test):
+def predict(predictor, data_train, y, data_test, cv_score=None):
     predictor.fit(data_train, y)
     prediction = predictor.predict(data_test)
     print predictor
@@ -17,4 +17,5 @@ def predict(predictor, data_train, y, data_test):
     # Write a short description of the classifier that was used
     f = open(filepath_description, 'w')
     f.write(str(predictor))
+    f.write('\nCross-validation score %.8f' % cv_score)
     f.close()

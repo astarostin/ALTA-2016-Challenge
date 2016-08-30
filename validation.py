@@ -15,13 +15,14 @@ def test_logistic_regression(X, y):
 
 
 def test_logistic_regression_cv(X, y):
-    predictor = LogisticRegression()
-    estimators_grid = {'C': [10 ** k for k in np.arange(-3, 0.1, 0.1)]}
+    predictor = LogisticRegression(penalty='l1')
+    estimators_grid = {'C': [10 ** k for k in np.arange(-3, 0.1, 0.05)]}
+    # estimators_grid = {'C': np.arange(0.25, 0.35, 0.001)}
     gs = grid_search(predictor, estimators_grid, X, y)
     print 'Grid Search CV for Logistic Regression. Best parameter C = %.4f, best score = %.8f' % \
           (gs.best_params_['C'], gs.best_score_)
 
-    return LogisticRegression(C=gs.best_params_['C'])
+    return gs.best_estimator_, gs.best_score_
 
 
 def validate(predictor, X, y):

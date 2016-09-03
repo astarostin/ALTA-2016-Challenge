@@ -59,8 +59,8 @@ def prepare_features_tfidf(data_train, data_test):
     n_most_common_words_to_ignore = 0
     token_min_length = 4
     feater_joininig_method = 'concat'  # 'concat', 'sum', 'other'
-    a_cols = ['ASnippet']
-    b_cols = ['BSnippet']
+    a_cols = ['ATitle', 'ASnippet']
+    b_cols = ['BTitle', 'BSnippet']
     #################################################################################
 
     # get most common tokens

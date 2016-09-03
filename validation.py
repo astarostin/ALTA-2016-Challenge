@@ -15,9 +15,9 @@ def test_logistic_regression(X, y):
 
 
 def test_logistic_regression_cv(X, y):
-    predictor = LogisticRegression(penalty='l1')
-    estimators_grid = {'C': [10 ** k for k in np.arange(-3, 0.1, 0.05)]}
-    # estimators_grid = {'C': np.arange(0.25, 0.35, 0.001)}
+    predictor = LogisticRegression(penalty='l1', random_state=42)
+    estimators_grid = {'C': [10 ** k for k in np.arange(-3, 1, 0.05)]}
+    # estimators_grid = {'C': np.arange(0.01, 2, 0.01)}
     gs = grid_search(predictor, estimators_grid, X, y)
     print 'Grid Search CV for Logistic Regression. Best parameter C = %.4f, best score = %.8f' % \
           (gs.best_params_['C'], gs.best_score_)
@@ -36,3 +36,9 @@ def grid_search(predictor, estimators_grid, X, y):
     gs = GridSearchCV(predictor, estimators_grid, scoring='f1', cv=kf)
     gs.fit(X, y)
     return gs
+
+
+def prepare_predictor(X, y, mode='logreg'):
+    if mode == 'logreg':
+        return test_logistic_regression_cv(X, y)
+    raise ValueError('Incorrect parameter "%s" for prepare_predictor!' % mode)

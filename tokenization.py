@@ -5,6 +5,10 @@ import nltk
 from nltk.stem.porter import PorterStemmer
 
 
+# def is_stop_word(word):
+#     return word not in ['http', 'https', 'www', 'com', 'org']
+
+
 def get_url_tokens(url):
     """
     Returns tokens from url split by non-word characters. Ignores domain and extension
@@ -35,12 +39,13 @@ def tokenize_nltk(text):
     return [x.lower() for x in stems]
 
 
-def tokenize_simple(text):
+def tokenize_simple(text, stop_words=[], token_min_length=4):
     tokens = filter(None, re.split('[^a-zA-Z0-9]+', text))
     res = []
     # Digits seem useless (otherwise add '|[0-9]+')
-    # Min length - 2 symbols
+    pattern = '[A-Z]{%d,}|[A-Z][^A-Z]{%d,}|^[a-z]{%d,}' % (token_min_length, token_min_length-1, token_min_length)
     for token in tokens:
-        res.extend(re.findall('[A-Z]{2,}|[A-Z][^A-Z]{1,}|^[a-z]{2,}', token))
-    # Convert all tokens to lowercase
-    return [x.lower().decode('utf-8').encode('ascii', errors='ignore') for x in res]
+        res.extend(re.findall(pattern, token))
+    # Convert all tokens to lowercase, encode and filter stop words
+    return filter(lambda s: s not in stop_words,
+                  [x.lower().decode('utf-8').encode('ascii', errors='ignore') for x in res])

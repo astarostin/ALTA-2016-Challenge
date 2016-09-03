@@ -19,7 +19,7 @@ y = labels_train['Outcome']
 
 # grid search for best parameters
 # possible modes: logreg
-predictor, cv_score = prepare_predictor(data_train, y, mode='logreg')
+predictor, cv_score = prepare_predictor(data_train, y, mode='boosting')
 
 # make predictions
 predict(predictor, data_train, y, data_test, cv_score)

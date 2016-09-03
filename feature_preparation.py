@@ -59,8 +59,8 @@ def prepare_features_tfidf(data_train, data_test):
     n_most_common_words_to_ignore = 0
     token_min_length = 4
     feater_joininig_method = 'concat'  # 'concat', 'sum', 'other'
-    a_cols = ['ATitle', 'ASnippet']
-    b_cols = ['BTitle', 'BSnippet']
+    a_cols = ['AUrl', 'ATitle', 'ASnippet']
+    b_cols = ['BUrl', 'BTitle', 'BSnippet']
     #################################################################################
 
     # get most common tokens
@@ -80,7 +80,7 @@ def prepare_features_tfidf(data_train, data_test):
     features_train = pd.DataFrame(joined_features.toarray(), index=data_train.index)
 
     td_matrix_a = tfidf.fit_transform(data_test['ATokens'])
-    td_matrix_b = tfidf.fit_transform(data_test['ATokens'])
+    td_matrix_b = tfidf.fit_transform(data_test['BTokens'])
     # td_matrix_both = tfidf.fit_transform(data_test['BothTokens'])
     joined_features = join_features(td_matrix_a, td_matrix_b, feater_joininig_method)
     features_test = pd.DataFrame(joined_features.toarray(), index=data_test.index)

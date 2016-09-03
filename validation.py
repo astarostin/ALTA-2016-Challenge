@@ -1,6 +1,7 @@
 from sklearn.cross_validation import cross_val_score, KFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.grid_search import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 import numpy as np
 
 
@@ -8,10 +9,11 @@ def get_fold(n):
     return KFold(n, n_folds=5, shuffle=True, random_state=42)
 
 
-def test_logistic_regression(X, y):
-    predictor = LogisticRegression()
-    print 'Cross Validaton for Logistic Regression: ' + str(validate(predictor, X, y))
-    return predictor
+def test_boosting(X, y):
+    predictor = GradientBoostingClassifier(loss='deviance', learning_rate=0.3, n_estimators=100, random_state=42)
+    score = validate(predictor, X, y)
+    print 'Cross Validaton for GradientBoostingClassifier: ' + str(score)
+    return predictor, score
 
 
 def test_logistic_regression_cv(X, y):
@@ -21,6 +23,29 @@ def test_logistic_regression_cv(X, y):
     gs = grid_search(predictor, estimators_grid, X, y)
     print 'Grid Search CV for Logistic Regression. Best parameter C = %.4f, best score = %.8f' % \
           (gs.best_params_['C'], gs.best_score_)
+
+    return gs.best_estimator_, gs.best_score_
+
+
+def test_rf_cv(X, y):
+    predictor = RandomForestClassifier(random_state=42)
+    estimators_grid = {'criterion': ['entropy', 'gini'], 'n_estimators': [150, 200, 250]}
+    gs = grid_search(predictor, estimators_grid, X, y)
+    print 'Grid Search CV for RandomForestClassifier. Best parameter n_estimators = %d, ' \
+          'criterion = %s, best score = %.8f' % \
+          (gs.best_params_['n_estimators'], gs.best_params_['criterion'], gs.best_score_)
+
+    return gs.best_estimator_, gs.best_score_
+
+
+def test_boosting_cv(X, y):
+    predictor = GradientBoostingClassifier(random_state=42)
+    estimators_grid = {'loss': ['exponential'], 'n_estimators': [105],
+                       'learning_rate': [0.006, 0.007, 0.0075, 0.008]}
+    gs = grid_search(predictor, estimators_grid, X, y)
+    print 'Grid Search CV for GradientBoostingClassifier. Best parameter ' \
+          'loss = %s, n_estimators = %d, learning_rate = %.8f best score = %.8f' % \
+          (gs.best_params_['loss'], gs.best_params_['n_estimators'], gs.best_params_['learning_rate'], gs.best_score_)
 
     return gs.best_estimator_, gs.best_score_
 
@@ -41,4 +66,8 @@ def grid_search(predictor, estimators_grid, X, y):
 def prepare_predictor(X, y, mode='logreg'):
     if mode == 'logreg':
         return test_logistic_regression_cv(X, y)
+    if mode == 'forest':
+        return test_rf_cv(X, y)
+    if mode == 'boosting':
+        return test_boosting_cv(X, y)
     raise ValueError('Incorrect parameter "%s" for prepare_predictor!' % mode)

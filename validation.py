@@ -5,7 +5,7 @@ import numpy as np
 
 
 def get_fold(n):
-    return KFold(n, n_folds=5, shuffle=True, random_state=42)
+    return KFold(n, n_folds=3, shuffle=True, random_state=42)
 
 
 def test_logistic_regression(X, y):

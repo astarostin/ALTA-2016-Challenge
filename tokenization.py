@@ -3,6 +3,7 @@ from os.path import splitext, basename
 import re
 import nltk
 from nltk.stem.porter import PorterStemmer
+from nltk.stem.wordnet import WordNetLemmatizer
 
 
 class Tokenizer:
@@ -45,10 +46,17 @@ class Tokenizer:
         nn_tokens = [[w[0] for w in sent if ('NN' in w[1])] for sent in tagged_sentences]
         nn_tokens = [item for sublist in nn_tokens for item in sublist]
 
-        stemmer = PorterStemmer()
-        stems = self.stem_tokens(nn_tokens, stemmer)
-        return [x.lower() for x in stems]
-        # return nn_tokens
+        # stemming
+        # stemmer = PorterStemmer()
+        # stems = self.stem_tokens(nn_tokens, stemmer)
+        # return [x.lower() for x in stems]
+
+        # lemmatization
+        # lmtzr = WordNetLemmatizer()
+        # lemms = [lmtzr.lemmatize(x.lower()) for x in nn_tokens]
+        # return lemms
+
+        return nn_tokens
 
     def tokenize(self, text, type='text'):
         if self._use_nltk_tokenize and type=='text':

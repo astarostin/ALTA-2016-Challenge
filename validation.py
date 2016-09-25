@@ -4,12 +4,20 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.naive_bayes import MultinomialNB
 from vectorization import PairVectorizer
 from sklearn.grid_search import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 import numpy as np
 from sklearn.pipeline import Pipeline
 import tokenization as prep
 
 def get_fold(n):
     return KFold(n, n_folds=3, shuffle=True, random_state=42)
+
+
+def test_boosting(X, y):
+    predictor = GradientBoostingClassifier(loss='deviance', learning_rate=0.3, n_estimators=100, random_state=42)
+    score = validate(predictor, X, y)
+    print 'Cross Validaton for GradientBoostingClassifier: ' + str(score)
+    return predictor, score
 
 
 def test_logistic_regression_cv(X, y):
@@ -54,6 +62,7 @@ def test_cv(predictor, estimators_grid, X, y):
     print 'Best score: %.8f' % gs.best_score_
 
     return gs.best_estimator_, gs.best_score_
+
 
 def validate(predictor, X, y):
     kf = get_fold(len(X))

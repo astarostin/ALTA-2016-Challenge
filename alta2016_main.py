@@ -1,6 +1,6 @@
-from feature_preparation import FeaturePreparator
-from validation import prepare_predictor, pipeline
-from prediction import predict, print_prediction
+from feature_preparation import prepare_features
+from validation import prepare_predictor
+from prediction import predict
 import pandas as pd
 import tokenization
 
@@ -22,6 +22,7 @@ y = labels_train['Outcome']
 # possible modes: logreg
 # predictor, cv_score = prepare_predictor(data_train, y, mode='logreg')
 # predict(predictor, data_train, y, data_test, cv_score)
+predictor, cv_score = prepare_predictor(data_train, y, mode='boosting')
 
 #use pipeline
 prep = FeaturePreparator(['AUrl', 'ATitle', 'ASnippet'], ['BUrl', 'BTitle', 'BSnippet'])

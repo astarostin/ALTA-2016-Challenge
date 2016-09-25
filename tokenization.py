@@ -26,7 +26,7 @@ class Tokenizer:
         path = parsed_url.path
         _, ext = splitext(basename(path))
         path = path.replace(ext, '')
-        return self.tokenize_simple(path)
+        return path
 
     def stem_tokens(self, tokens, stemmer):
         stemmed = []
@@ -58,21 +58,23 @@ class Tokenizer:
 
         return nn_tokens
 
-    def tokenize(self, text, type='text'):
-        if self._use_nltk_tokenize and type=='text':
+    def tokenize(self, text, stop_words=[], token_min_length=4):
+        if self._use_nltk_tokenize:
             return self.tokenize_nltk(text)
         else:
-            return self.tokenize_simple(text, type)
+            return self.tokenize_simple(text, stop_words, token_min_length)
 
-    def tokenize_simple(self, text, type='text'):
-        if type == 'url':
-            return self.get_url_tokens(text)
+    def tokenize_simple(self, text, stop_words, token_min_length):
+        pattern_url = '^(www|http|https).*|.+(\.com/|\.org/).*'
+        if re.match(pattern_url, text):
+            text = self.get_url_tokens(text)
 
         tokens = filter(None, re.split('[^a-zA-Z0-9]+', text))
         res = []
         # Digits seem useless (otherwise add '|[0-9]+')
-        pattern = '[A-Z]{%d,}|[A-Z][^A-Z]{%d,}|^[a-z]{%d,}' % (self._token_min_length, self._token_min_length-1, self._token_min_length)
+        pattern = '[A-Z]{%d,}|[A-Z][^A-Z]{%d,}|^[a-z]{%d,}' % (token_min_length, token_min_length - 1, token_min_length)
         for token in tokens:
             res.extend(re.findall(pattern, token))
         # Convert all tokens to lowercase, encode and filter stop words
-        return [x.lower().decode('utf-8').encode('ascii', errors='ignore') for x in res]
+        return filter(lambda s: s not in stop_words,
+                      [x.lower().decode('utf-8').encode('ascii', errors='ignore') for x in res])

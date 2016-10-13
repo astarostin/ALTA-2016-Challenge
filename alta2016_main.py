@@ -12,14 +12,14 @@ search_test = pd.read_csv('data/alta16_kbcoref_test_search_results.csv', sep=','
 
 # prepare features
 # possible modes: tfidf
-data_train, data_test = prepare_features(search_train, search_test, mode='tfidf')
+data_train, data_test = prepare_features(search_train, search_test, mode='word2vec')
 
 # target data
 y = labels_train['Outcome']
 
 # grid search for best parameters
 # possible modes: logreg
-predictor, cv_score = prepare_predictor(data_train, y, mode='boosting')
+predictor, cv_score = prepare_predictor(data_train, y, mode='logreg')
 
 # make predictions
 predict(predictor, data_train, y, data_test, cv_score)

@@ -1,6 +1,6 @@
-from feature_preparation import prepare_features
-from validation import prepare_predictor
-from prediction import predict
+from feature_preparation import FeaturePreparator
+from validation import prepare_predictor, pipeline
+from prediction import predict, print_prediction
 import pandas as pd
 import tokenization
 
@@ -19,14 +19,15 @@ search_test = pd.read_csv('data/alta16_kbcoref_test_search_results.csv', sep=','
 y = labels_train['Outcome']
 
 # grid search for best parameters
-# possible modes: logreg
-# predictor, cv_score = prepare_predictor(data_train, y, mode='logreg')
+# possible modes: {logreg, boosting, forest}
+# predictor, cv_score = prepare_predictor(data_train, y, mode='boosting')
 # predict(predictor, data_train, y, data_test, cv_score)
 predictor, cv_score = prepare_predictor(data_train, y, mode='boosting')
 
 #use pipeline
-prep = FeaturePreparator(['AUrl', 'ATitle', 'ASnippet'], ['BUrl', 'BTitle', 'BSnippet'])
-predictor, cv_score, prediction = pipeline(search_train, search_test, y, prep, 'NB')
-print_prediction(predictor, prediction, search_test.index, cv_score)
+# prep = FeaturePreparator(['AUrl', 'ATitle', 'ASnippet'], ['BUrl', 'BTitle', 'BSnippet'])
+# predictor, cv_score, prediction = pipeline(search_train, search_test, y, prep, 'NB')
+# print_prediction(predictor, prediction, search_test.index, cv_score)
+#
+# print('score=%f') % cv_score
 
-print('score=%f') % cv_score

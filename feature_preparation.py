@@ -1,6 +1,6 @@
 import tokenization as prep
 from sklearn.feature_extraction.text import TfidfVectorizer
-from scipy.sparse import hstack
+from scipy.spatial.distance import cosine
 import pandas as pd
 from collections import Counter
 from gensim.models import Word2Vec
@@ -43,17 +43,6 @@ def prepare_tokens_list(row, columns, tokenizer, vocabulary, stop_words, token_m
     return tokens_prev + tokens_summary
 
 
-def prepare_vector(row, model, column):
-    total = np.zeros(model.vector_size)
-    count = 0
-    for token in row[column]:
-        if token in model:
-            total = np.add(total, model[token])
-            count += 1
-    return total / float(count)
-
-
-
 def add_tokens_columns(df, vocabulary, a_cols, b_cols, stop_words=[], token_min_length=4,
                        prepare_tokens=prepare_tokens_string):
     df['ATokens'] = df.apply(lambda row: prepare_tokens(row, a_cols, prep.tokenize_simple,
@@ -66,9 +55,30 @@ def add_tokens_columns(df, vocabulary, a_cols, b_cols, stop_words=[], token_min_
     #                                                        stop_words, token_min_length, 'BothTokens'), axis=1)
 
 
-def add_vector_columns(df, model, a_col, b_col):
-    df['AVector'] = df.apply(lambda row: prepare_vector(row, model, a_col), axis=1)
-    df['BVector'] = df.apply(lambda row: prepare_vector(row, model, b_col), axis=1)
+def get_vector(model, tokens):
+    total = np.zeros(model.vector_size)
+    count = 0
+    for token in tokens:
+        if token in model:
+            total = np.add(total, model[token])
+            count += 1
+    return total / float(count)
+
+
+def get_vectors(df, model, a_col, b_col):
+    vectors_a = np.zeros(shape=(df.shape[0], model.vector_size))
+    vectors_b = np.zeros(shape=(df.shape[0], model.vector_size))
+
+    num = 0
+    for i in df.index:
+        tokens_a = df.ix[i, a_col]
+        tokens_b = df.ix[i, b_col]
+
+        vectors_a[num] = get_vector(model, tokens_a)
+        vectors_b[num] = get_vector(model, tokens_b)
+        num += 1
+
+    return vectors_a, vectors_b
 
 
 def get_most_common(data_train, data_test, a_cols, b_cols, n_most_common):
@@ -79,20 +89,32 @@ def get_most_common(data_train, data_test, a_cols, b_cols, n_most_common):
     return [t[0] for t in counts.most_common(n_most_common)]
 
 
+def get_cosine_feature(m1, m2):
+    res = np.zeros(shape=(m1.shape[0], 1))
+    for i in xrange(m1.shape[0]):
+        res[i] = cosine(m1[i], m2[i])
+    return res
+
+
 def join_features(m1, m2=None, mode='other'):
     if mode == 'concat':
-        return hstack((m1, m2))
+        return np.hstack((m1, m2))
     if mode == 'sum':
         return m1 + m2
+    if mode == 'subtract':
+        return np.hstack((m1 - m2, get_cosine_feature(m1, m2)))
+    if mode == 'sum-cosine':
+        return np.hstack((m1+m2, get_cosine_feature(m1, m2)))
+    if mode == 'concat-cosine':
+        return np.hstack((np.hstack((m1, m2)), get_cosine_feature(m1, m2)))
     raise ValueError('Incorrect parameter "%s" for join_features!' % mode)
 
 
-def prepare_features_tfidf(data_train, data_test):
+def prepare_features_tfidf(data_train, data_test, feater_joininig_method):
     #################################################################################
     # Main params for feature preparation
     n_most_common_words_to_ignore = 0
     token_min_length = 4
-    feater_joininig_method = 'concat'  # 'concat', 'sum', 'other'
     a_cols = ['AUrl', 'ATitle', 'ASnippet']
     b_cols = ['BUrl', 'BTitle', 'BSnippet']
     #################################################################################
@@ -122,12 +144,11 @@ def prepare_features_tfidf(data_train, data_test):
     return features_train, features_test
 
 
-def prepare_features_word2vec(data_train, data_test):
+def prepare_features_word2vec(data_train, data_test, feater_joininig_method):
     #################################################################################
     # Main params for feature preparation
-    n_most_common_words_to_ignore = 0
-    token_min_length = 4
-    feater_joininig_method = 'concat'  # 'concat', 'sum', 'other'
+    n_most_common_words_to_ignore = 5
+    token_min_length = 2
     a_cols = ['ASnippet']
     b_cols = ['BSnippet']
     #################################################################################
@@ -144,22 +165,23 @@ def prepare_features_word2vec(data_train, data_test):
         for row in data_test[col]:
             sentences.append(row)
 
-    model = Word2Vec(sentences, size=100)
-    add_vector_columns(data_train, model, 'ATokens', 'BTokens')
-    add_vector_columns(data_test, model, 'ATokens', 'BTokens')
+    model = Word2Vec(sentences, size=100, min_count=1, sg=0)
+    vectors_a_train, vectors_b_train = get_vectors(data_train, model, 'ATokens', 'BTokens')
+    vectors_a_test, vectors_b_test = get_vectors(data_test, model, 'ATokens', 'BTokens')
 
-    joined_features = join_features(data_train['AVector'], data_train['BVector'], feater_joininig_method)
-    features_train = pd.DataFrame(joined_features.toarray(), index=data_train.index)
+    joined_features = join_features(vectors_a_train, vectors_b_train, feater_joininig_method)
+    features_train = pd.DataFrame(joined_features, index=data_train.index)
 
-    joined_features = join_features(data_test['AVector'], data_test['BVector'], feater_joininig_method)
-    features_test = pd.DataFrame(joined_features.toarray(), index=data_test.index)
+    joined_features = join_features(vectors_a_test, vectors_b_test, feater_joininig_method)
+    features_test = pd.DataFrame(joined_features, index=data_test.index)
 
     return features_train, features_test
 
 
 def prepare_features(data_train, data_test, mode):
+    feater_joininig_method = 'concat-cosine'  # 'sum', 'concat', 'subtract'
     if mode == 'tfidf':
-        return prepare_features_tfidf(data_train, data_test)
+        return prepare_features_tfidf(data_train, data_test, feater_joininig_method)
     if mode == 'word2vec':
-        return prepare_features_word2vec(data_train, data_test)
+        return prepare_features_word2vec(data_train, data_test, feater_joininig_method)
     raise ValueError('Incorrect parameter "%s" for prepare_features!' % mode)
